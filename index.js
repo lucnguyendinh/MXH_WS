@@ -1,45 +1,46 @@
-const io = require('socket.io')(8900, {
-    cors: {
-        origin: 'http://localhost:3000',
-    },
-})
+const io = require("socket.io")(8900, {
+  cors: {
+    origin: "http://localhost:3000",
+  },
+});
 
-let users = []
+let users = [];
 
 const addUser = (userId, socketId) => {
-    !users.some((user) => user.userId === userId) && users.push({ userId, socketId })
-}
+  !users.some((user) => user.userId === userId) &&
+    users.push({ userId, socketId });
+};
 
 const removeUser = (socketId) => {
-    users = users.filter((user) => user.socketId !== socketId)
-}
+  users = users.filter((user) => user.socketId !== socketId);
+};
 
 const getUser = (userId) => {
-    return users.find((user) => user.userId === userId)
-}
+  return users.find((user) => user.userId === userId);
+};
 
-io.on('connection', (socket) => {
-    console.log('a user connected.')
-    //Take userId and socketId from user
-    socket.on('addUser', (userId) => {
-        addUser(userId, socket.id)
-        io.emit('getUsers', users)
-    })
+io.on("connection", (socket) => {
+  console.log("a user connected.");
+  //Take userId and socketId from user
+  socket.on("addUser", (userId) => {
+    addUser(userId, socket.id);
+    io.emit("getUsers", users);
+  });
 
-    //Send and get message
-    socket.on('sendMessage', ({ senderId, receiverId, text }) => {
-        const user = getUser(receiverId)
+  //send and get message
+  socket.on("sendMessage", ({ senderId, receiverId, text }) => {
+    const user = getUser(receiverId);
+    console.log(users);
+    io.to(user?.socketId).emit("getMessage", {
+      senderId,
+      text,
+    });
+  });
 
-        io.to(user.socketId).emit('getMessage', {
-            senderId,
-            text,
-        })
-    })
-
-    //Disconnect
-    socket.on('disconnect', () => {
-        console.log('a user disconnected')
-        removeUser(socket.id)
-        io.emit('getUsers', users)
-    })
-})
+  //Disconnect
+  socket.on("disconnect", () => {
+    console.log("a user disconnected");
+    removeUser(socket.id);
+    io.emit("getUsers", users);
+  });
+});
